@@ -402,34 +402,25 @@ public class PaperangController {
      */
     public void printImage(Bitmap img) throws IOException {
 
-        Bitmap bmp = convGrayscale(img);
-        int width = bmp.getWidth();
-        int height = bmp.getHeight();
+        int width = img.getWidth();
+        int height = img.getHeight();
 
         Log.i("PAPERANG", "width :" + Integer.toString(width));
         Log.i("PAPERANG", "height:" + Integer.toString(height));
 
         int[] pixcels = new int[width * height];
-        bmp.getPixels(pixcels, 0, width, 0, 0, width, height);
-
-        // グレースケール変換
-        //Log.i("PAPERANG", "Convert grayscale");
-        float[] grays = new float[pixcels.length];
-        byte[] bits = new byte[48 * height];
-        for(int i = 0; i < pixcels.length; i++){
-            int r = Color.red(pixcels[i]);
-            //int g = Color.green(pixcels[i]);
-            //int b = Color.blue(pixcels[i]);
-            grays[i] = (byte)(r == 0 ? 0 : 1);
-        }
+        img.getPixels(pixcels, 0, width, 0, 0, width, height);
 
         // バイト配列をビットに
+        byte[] bits = new byte[48 * height];
         for(int y = 0; y < height; y++){
             StringBuffer line = new StringBuffer();
             for(int x = 0; x < width; x++){
-                if(grays[y * width + x] == 0x00) {
+                int r = Color.red(pixcels[y * width + x]);
+                if(r == 0x00) {
                     line.append("1");
                     int idx = y * 48 + (x / 8);
+                    //bits[idx] = (byte) (bits[idx] | (1 << (8 - x % 8)));
                     switch(x % 8){
                         case 0:
                             bits[idx] = (byte)(bits[idx] | (byte)0x80);
@@ -456,29 +447,23 @@ public class PaperangController {
                             bits[idx] = (byte)(bits[idx] | (byte)0x01);
                             break;
                     }
-                    //bits[idx] = (byte) (bits[idx] | (1 << 8 - x % 8));
                 }else{
                     line.append("0");
                 }
             }
-            //Log.i("PAPERANG", "line:" + line.toString());
         }
-        bmp = null;
 
         int loffset = 41;
         if(height <= 41){
             loffset = height;
         }
 
-        //Log.i("PAPERANG", Integer.toString(bits.length) + " length");
         try {
             byte[] buff = new byte[48];
             ByteBuffer buffs = ByteBuffer.allocate(48 * loffset);
             buffs.order(ByteOrder.LITTLE_ENDIAN);
             for (int i = 0; i < bits.length; i++) {
                 if(i % (48 * loffset) == 0 && i > 0){
-                    //ResultData ret = getStatus();
-                    Log.i("PAPERANG","print");
                     printData(buffs.array());
                     buffs.clear();
                     buffs = ByteBuffer.allocate(48 * loffset);
@@ -486,9 +471,7 @@ public class PaperangController {
                 }
                 buffs.put(bits[i]);
             }
-            Log.i("PAPERANG","last print");
             printData(buffs.array());
-            Log.i("PAPERANG","finish print");
 
         }catch(Exception e){
             if(e != null){
