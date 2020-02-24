@@ -1,0 +1,59 @@
+<resources>
+    <string name="app_name">PaperangSample</string>
+    <string name="btn_exec">Execute</string>
+    <string name="btn_load_img">Load Image</string>
+    <string name="btn_print_img">Load Image</string>
+    <string name="btn_connect">Connect</string>
+    <string name="btn_disconnect">Disonnect</string>
+    <string-array name="cmd_spinner">
+        <item>UNKNOW</item>
+        <item>PRINT_DATA</item>
+        <item>PRINT_DATA_COMPRESS</item>
+        <item>FIRMWARE_DATA</item>
+        <item>USB_UPDATE_FIRMWARE</item>
+        <item>GET_VERSION</item>
+        <item>SENT_VERSION</item>
+        <item>GET_MODEL</item>
+        <item>SENT_MODEL</item>
+        <item>GET_BT_MAC</item>
+        <item>SENT_BT_MAC</item>
+        <item>GET_SN</item>
+        <item>SENT_SN</item>
+        <item>GET_STATUS</item>
+        <item>SENT_STATUS</item>
+        <item>GET_VOLTAGE</item>
+        <item>SENT_VOLTAGE</item>
+        <item>GET_BAT_STATUS</item>
+        <item>SENT_BAT_STATUS</item>
+        <item>GET_TEMP</item>
+        <item>SENT_TEMP</item>
+        <item>SET_FACTORY_STATUS</item>
+        <item>GET_FACTORY_STATUS</item>
+        <item>SENT_FACTORY_STATUS</item>
+        <item>SENT_BT_STATUS</item>
+        <item>SET_CRC_KEY</item>
+        <item>SET_HEAT_DENSITY</item>
+        <item>FEED_LINE</item>
+        <item>PRINT_TEST_PAGE</item>
+        <item>GET_HEAT_DENSITY</item>
+        <item>SENT_HEAT_DENSITY</item>
+        <item>SET_POWER_DOWN_TIME</item>
+        <item>GET_POWER_DOWN_TIME</item>
+        <item>SENT_POWER_DOWN_TIME</item>
+        <item>FEED_TO_HEAD_LINE</item>
+        <item>PRINT_DEFAULT_PARA</item>
+        <item>GET_BOARD_VERSION</item>
+        <item>SENT_BOARD_VERSION</item>
+        <item>GET_HW_INFO</item>
+        <item>SENT_HW_INFO</item>
+        <item>SET_MAX_GAP_LENGTH</item>
+        <item>GET_MAX_GAP_LENGTH</item>
+        <item>SENT_MAX_GAP_LENGTH</item>
+        <item>GET_PAPER_TYPE</item>
+        <item>SENT_PAPER_TYPE</item>
+        <item>SET_PAPER_TYPE</item>
+        <item>GET_COUNTRY_NAME</item>
+        <item>SENT_COUNTRY_NAME</item>
+        <item>DISCONNECT_BT_CMD</item>
+    </string-array>
+</resources>
