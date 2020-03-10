@@ -40,6 +40,8 @@ public class PaperangController {
             (byte)0x03                                      // 6.終端
     };
 
+    private ImageMode image_mode = ImageMode.MODE3x3;
+
     /**
      * 標準のキー
      * CRCキーを送るときはこれを使ってCRCを求める
@@ -358,6 +360,14 @@ public class PaperangController {
         return bmp;
     }
 
+    public void setImage_mode(ImageMode mode){
+        this.image_mode = mode;
+    }
+
+    public ImageMode getImage_mode(){
+        return this.image_mode;
+    }
+
     /**
      * 参考：https://itech-program.com/python/994
      * @param img
@@ -370,22 +380,60 @@ public class PaperangController {
         int thresh = 128;
         int err = 0;
 
+        int[][] matrix = null;
+        int matrixsize = 0;
+        switch(this.image_mode) {
+            case MODE3x3:
+                matrix = new int[][]{
+                        {2, 3, 4}
+                        ,{1, 0, 5}
+                        ,{8, 7, 6}
+                };
+                matrixsize = 3;
+                break;
+            case MODE4x4:
+                matrix = new int[][]{
+                        {0, 8, 2, 10}
+                        ,{12, 4, 14, 6}
+                        ,{3, 11, 1, 9}
+                        ,{15, 7, 13, 5}
+                };
+                matrixsize = 4;
+                break;
+        }
+
         int[] gray= new int[width * height];
         bmp.getPixels(gray, 0, width, 0, 0, width, height);
+
+        for(int i = 0; i < matrixsize; i++){
+            for(int j = 0; j < matrixsize; j++){
+                //0～255に変換
+                matrix[i][j] = matrix[i][j] * 16;
+            }
+        }
 
         for(int y = 0; y < height; y++){
             for(int x = 0; x < width; x++){
                 int color = gray[y * width + x];
                 int r = Color.red(color);
-                //int g = Color.green(color);
-                //int b = Color.blue(color);
-
-                if(r + err < thresh){
-                    err = r + err - 0;
-                    gray[y * width + x] = Color.argb(255,0,0,0);
-                }else{
-                    err = r + err - 255;
-                    gray[y * width + x] = Color.argb(255,255,255,255);
+                switch(this.image_mode){
+                    case NORMAL:
+                        if(r + err < thresh){
+                            err = r + err - 0;
+                            gray[y * width + x] = Color.argb(255,0,0,0);
+                        }else{
+                            err = r + err - 255;
+                            gray[y * width + x] = Color.argb(255,255,255,255);
+                        }
+                        break;
+                    case MODE3x3:
+                    case MODE4x4:
+                        if(Color.red(gray[y * width + x]) < matrix[y % matrixsize][x % matrixsize]){
+                            gray[y * width + x] = Color.argb(255,0,0,0);
+                        }else{
+                            gray[y * width + x] = Color.argb(255,255,255,255);
+                        }
+                        break;
                 }
             }
         }
