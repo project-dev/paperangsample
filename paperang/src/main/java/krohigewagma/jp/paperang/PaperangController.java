@@ -43,6 +43,8 @@ public class PaperangController {
 
     private ImageMode image_mode = ImageMode.MODE3x3;
 
+    private boolean isEecute = false;
+
     /**
      * 標準のキー
      * CRCキーを送るときはこれを使ってCRCを求める
@@ -65,16 +67,12 @@ public class PaperangController {
      */
     private static String SPP = "00001101-0000-1000-8000-00805F9B34FB";
 
-    private List<PaperangListener> listeners = null;
-
     /**
      * Bluetoothで通信するためのソケット
      */
     private BluetoothSocket socket = null;
     private OutputStream os = null;
     private InputStream is = null;
-
-    Thread thread = null;
 
     /**
      * 空データ
@@ -110,61 +108,34 @@ public class PaperangController {
         return deviceList;
     }
 
-    public void addPaperangListener(PaperangListener listener){
-        if(listeners == null){
-            listeners = new ArrayList<PaperangListener>();
-        }
-        listeners.add(listener);
-    }
-
-    public void removeListener(PaperangListener listener){
-        if(listeners.contains(listener)){
-            listeners.remove(listener);
-        }
-    }
-
     /**
      * 接続
      * @param device
+     * @return
      * @throws IOException
      */
-    public void connect(BluetoothDevice device) throws IOException{
+    public boolean connect(BluetoothDevice device) throws IOException{
         if(socket != null){
-            return;
+            return false;
         }
         socket = device.createRfcommSocketToServiceRecord(UUID.fromString(SPP));
-        socket.connect();
+
+        try{
+            socket.connect();
+        }catch(IOException e){
+            return false;
+        }
+
+        if(false == socket.isConnected()){
+            return false;
+        }
+
         os = socket.getOutputStream();
         is = socket.getInputStream();
-        os.write(crc);
-        thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try{
-                    while(thread != null && thread.isInterrupted() == false){
-                        byte[] result = new byte[max_msg_length];
-                        try {
-                            if(is != null && socket != null && socket.isConnected() == true){
-                                is.read(result);
-                                ResultData resultData = new ResultData(result);
-                                if(listeners != null){
-                                    for (PaperangListener listener: listeners) {
-                                        listener.onResult(resultData);
-                                    }
-                                }
-                            }
-                        } catch (IOException e) {
-                            Log.e("PAPERANG", e.getMessage());
-                        }
-                        Thread.sleep(100);
-                    }
-                } catch(InterruptedException e){
-                }
-            }
-        });
-        thread.start();
 
+        ResultData result = execute(crc, true);
         Log.i("PAPERANG", "connected");
+        return true;
     }
 
     /**
@@ -173,12 +144,6 @@ public class PaperangController {
     public void disconnect() throws IOException{
         //このコマンドを呼び出すべきなのかどうか判断できない
         //disconnectBtCmd();
-
-        if(thread != null){
-            thread.interrupt();
-            thread = null;
-        }
-
         try{
             if(socket != null && socket.isConnected()){
                 is.close();
@@ -199,9 +164,27 @@ public class PaperangController {
      * @param cmd
      * @throws IOException
      */
-    public void execute(byte[] cmd) throws IOException{
+    public ResultData execute(byte[] cmd, boolean isWaitResult) throws IOException{
         Log.i("PAPERANG", "write command");
+/*
+        if(isEecute == true){
+            return false;
+        }
+        isEecute = true;
+ */
+        if(null == socket || false == socket.isConnected() ){
+            return new ResultData(null);
+        }
+
         os.write(cmd);
+        byte[] result = new byte[max_msg_length];
+        if(true == isWaitResult){
+            Log.d("PAPERANG", "waiting...");
+            is.read(result);
+        }
+        ResultData resultData = new ResultData(result);
+        Log.i("PAPERANG", "result : " + resultData.toString());
+        return resultData;
     }
 
     /**
@@ -304,12 +287,7 @@ public class PaperangController {
      */
     private void byteLog(String logTitle, byte[] buff){
         StringBuffer log = new StringBuffer();
-/*
-        for(int i = buff.length - 1; i >= 0; i--){
-            log.append(Integer.toHexString(Math.abs(buff[i])));
-            log.append(" ");
-        }
- */
+
         for(int i = 0; i < buff.length ; i++){
             String txt = "00" + Integer.toHexString(Math.abs(buff[i]));
             log.append(txt.substring(txt.length() - 2) );
@@ -328,8 +306,6 @@ public class PaperangController {
     public Bitmap convGrayscale(Bitmap img){
         int width = img.getWidth();
         int height = img.getHeight();
-        //Log.i("PAPERANG", "width :" + Integer.toString(width));
-        //Log.i("PAPERANG", "height:" + Integer.toString(height));
 
         if(width != 384) {
             // サイズ調整
@@ -341,8 +317,6 @@ public class PaperangController {
                 width = 384;
             }
         }
-        //Log.i("PAPERANG", "width :" + Integer.toString(width));
-        //Log.i("PAPERANG", "height:" + Integer.toString(height));
 
         Bitmap bmp = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
         Canvas canvas = new Canvas(bmp);
@@ -540,7 +514,12 @@ public class PaperangController {
      */
     public void printData(byte[] data) throws IOException{
         byte[] cmd = createCommand(Command.PRINT_DATA, data);
-        execute(cmd);
+        execute(cmd, false);
+        try{
+            Thread.sleep(420);
+        }catch(Exception e){
+
+        }
     }
 
     /**
@@ -549,214 +528,210 @@ public class PaperangController {
      */
     public void printDataCompress() throws IOException{
         byte[] cmd = createCommand(Command.PRINT_DATA_COMPRESS, null);
-        execute(cmd);
+        execute(cmd, false);
     }
 
-    /**
-     * @deprecated 試していません
-     * @throws IOException
-     */
-    public void firmwareData() throws IOException{
+/*
+    public void firmwareData(){
         byte[] cmd = createCommand(Command.FIRMWARE_DATA, null);
-        execute(cmd);
+        execute(cmd, true);
     }
+*/
 
-    /**
-     * @deprecated 試していません
-     * @throws IOException
-     */
-    public void usbUpdateFirmware() throws IOException{
+/*
+    public void usbUpdateFirmware(){
         byte[] cmd = createCommand(Command.USB_UPDATE_FIRMWARE, null);
-        execute(cmd);
+        execute(cmd, true);
     }
+*/
 
     /**
      * バージョンを取得します
      * @throws IOException
      */
-    public void getVersion() throws IOException{
+    public ResultData getVersion() throws IOException{
         byte[] cmd = createCommand(Command.GET_VERSION, EMPRYDATA);
-        execute(cmd);
+        return execute(cmd, true);
+
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void sentVersion() throws IOException{
+    public ResultData sentVersion() throws IOException{
         byte[] cmd = createCommand(Command.SENT_VERSION, null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void getModel() throws IOException{
+    public ResultData getModel() throws IOException{
         byte[] cmd = createCommand(Command.GET_MODEL, EMPRYDATA);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void sentModel() throws IOException{
+    public ResultData sentModel() throws IOException{
         byte[] cmd = createCommand(Command.SENT_MODEL, null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * MACアドレスを取得します
      * @throws IOException
      */
-    public void getBtMac() throws IOException{
+    public ResultData getBtMac() throws IOException{
         byte[] cmd = createCommand(Command.GET_BT_MAC, null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void sentBtMac() throws IOException{
+    public ResultData sentBtMac() throws IOException{
         byte[] cmd = createCommand(Command.SENT_BT_MAC, null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void getSn() throws IOException{
+    public ResultData getSn() throws IOException{
         byte[] cmd = createCommand(Command.GET_SN, null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void sentSn() throws IOException{
+    public ResultData sentSn() throws IOException{
         byte[] cmd = createCommand(Command.SENT_SN, null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
-     * @deprecated 試していません
      * @throws IOException
      */
-    public void getStatus() throws IOException{
+    public ResultData getStatus() throws IOException{
         byte[] cmd = createCommand(Command.GET_STATUS, null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void sentStatus() throws IOException{
+    public ResultData sentStatus() throws IOException{
         byte[] cmd = createCommand(Command.SENT_STATUS, null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void getVoltage() throws IOException{
+    public ResultData getVoltage() throws IOException{
         byte[] cmd = createCommand(Command.GET_VOLTAGE, null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void sentVoltage() throws IOException{
+    public ResultData sentVoltage() throws IOException{
         byte[] cmd = createCommand(Command.SENT_VOLTAGE , null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void getBatStatus() throws IOException{
+    public ResultData getBatStatus() throws IOException{
         byte[] cmd = createCommand(Command.GET_BAT_STATUS , null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void sentBatStatus() throws IOException{
+    public ResultData sentBatStatus() throws IOException{
         byte[] cmd = createCommand(Command.SENT_BAT_STATUS , null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void getTemp() throws IOException{
+    public ResultData getTemp() throws IOException{
         byte[] cmd = createCommand(Command.GET_TEMP, null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void sentTemp() throws IOException{
+    public ResultData sentTemp() throws IOException{
         byte[] cmd = createCommand(Command.SENT_TEMP, null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void setFactoryStatus() throws IOException{
+    public ResultData setFactoryStatus() throws IOException{
         byte[] cmd = createCommand(Command.SET_FACTORY_STATUS, null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void getFactoryStatus() throws IOException{
+    public ResultData getFactoryStatus() throws IOException{
         byte[] cmd = createCommand(Command.GET_FACTORY_STATUS , null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void sentFactoryStatus() throws IOException{
+    public ResultData sentFactoryStatus() throws IOException{
         byte[] cmd = createCommand(Command.SENT_FACTORY_STATUS , null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void sentBtStatus() throws IOException{
+    public ResultData sentBtStatus() throws IOException{
         byte[] cmd = createCommand(Command.SENT_BT_STATUS, null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void setCrcKey() throws IOException{
+    public ResultData setCrcKey() throws IOException{
         byte[] cmd = createCommand(Command.SET_CRC_KEY, null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
@@ -764,9 +739,9 @@ public class PaperangController {
      * @param density
      * @throws IOException
      */
-    public void setHeatDensity(int density) throws IOException{
+    public ResultData setHeatDensity(int density) throws IOException{
         byte[] cmd = createCommand(Command.SET_HEAT_DENSITY, null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
@@ -774,190 +749,195 @@ public class PaperangController {
      * @param lines 送る行数
      * @throws IOException
      */
-    public void sendFeedLine(short lines) throws IOException{
+    public ResultData sendFeedLine(short lines) throws IOException{
         ByteBuffer b = ByteBuffer.allocate(2);
         b.putShort(lines);
         byte[] cmd = createCommand(Command.FEED_LINE, b.array());
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * テストページを印刷します
      * @throws IOException
      */
-    public void printTestPage() throws IOException{
+    public ResultData printTestPage() throws IOException{
         byte[] cmd = createCommand(Command.PRINT_TEST_PAGE, EMPRYDATA);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void getHeatDensity() throws IOException{
+    public ResultData getHeatDensity() throws IOException{
         byte[] cmd = createCommand(Command.GET_HEAT_DENSITY, new byte[]{});
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void sentHeatDensity() throws IOException{
+    public ResultData sentHeatDensity() throws IOException{
         byte[] cmd = createCommand(Command.SENT_HEAT_DENSITY, null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void setPowerDownTime() throws IOException{
+    public ResultData setPowerDownTime() throws IOException{
         byte[] cmd = createCommand(Command.SET_POWER_DOWN_TIME, null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void getPowerDownTime() throws IOException{
+    public ResultData getPowerDownTime() throws IOException{
         byte[] cmd = createCommand(Command.GET_POWER_DOWN_TIME, null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void sentPowerDownTime() throws IOException{
+    public ResultData sentPowerDownTime() throws IOException{
         byte[] cmd = createCommand(Command.SENT_POWER_DOWN_TIME, null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void feedToHeadLine() throws IOException{
+    public ResultData feedToHeadLine() throws IOException{
         byte[] cmd = createCommand(Command.FEED_TO_HEAD_LINE, null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void printDefaultPara() throws IOException{
+    public ResultData printDefaultPara() throws IOException{
         byte[] cmd = createCommand(Command.PRINT_DEFAULT_PARA, null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void getBoardVersion() throws IOException{
+    public ResultData getBoardVersion() throws IOException{
         byte[] cmd = createCommand(Command.GET_BOARD_VERSION , null);
-        execute(cmd);
+        return execute(cmd, true);
+    }
+
+    public ResultData sentBoardVersion() throws IOException{
+        byte[] cmd = createCommand(Command.SENT_BOARD_VERSION , null);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void getHwInfo() throws IOException{
+    public ResultData getHwInfo() throws IOException{
         byte[] cmd = createCommand(Command.GET_HW_INFO, null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void sentHwInfo() throws IOException{
+    public ResultData sentHwInfo() throws IOException{
         byte[] cmd = createCommand(Command.SENT_HW_INFO, null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void setMaxGapLength() throws IOException{
+    public ResultData setMaxGapLength() throws IOException{
         byte[] cmd = createCommand(Command.SET_MAX_GAP_LENGTH , null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void getMaxGapLength() throws IOException{
+    public ResultData getMaxGapLength() throws IOException{
         byte[] cmd = createCommand(Command.GET_MAX_GAP_LENGTH, null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void sentMaxGapLength() throws IOException{
+    public ResultData sentMaxGapLength() throws IOException{
         byte[] cmd = createCommand(Command.SENT_MAX_GAP_LENGTH , null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void getPaperType() throws IOException{
+    public ResultData getPaperType() throws IOException{
         byte[] cmd = createCommand(Command.GET_PAPER_TYPE , null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void sentPaperType() throws IOException{
+    public ResultData sentPaperType() throws IOException{
         byte[] cmd = createCommand(Command.SENT_PAPER_TYPE, null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void setPaperType() throws IOException{
+    public ResultData setPaperType() throws IOException{
         byte[] cmd = createCommand(Command.SET_PAPER_TYPE , null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void getCountryName() throws IOException{
+    public ResultData getCountryName() throws IOException{
         byte[] cmd = createCommand(Command.GET_COUNTRY_NAME, null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * @deprecated 試していません
      * @throws IOException
      */
-    public void sentCountryName() throws IOException{
+    public ResultData sentCountryName() throws IOException{
         byte[] cmd = createCommand(Command.SENT_COUNTRY_NAME, null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 
     /**
      * 切断します
      * @throws IOException
      */
-    public void disconnectBtCmd() throws IOException{
+    public ResultData disconnectBtCmd() throws IOException{
         byte[] cmd = createCommand(Command.DISCONNECT_BT_CMD, null);
-        execute(cmd);
+        return execute(cmd, true);
     }
 }

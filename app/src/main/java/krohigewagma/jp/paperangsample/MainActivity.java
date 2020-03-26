@@ -25,14 +25,12 @@ import java.util.List;
 
 import krohigewagma.jp.paperang.Command;
 import krohigewagma.jp.paperang.PaperangController;
-import krohigewagma.jp.paperang.PaperangListener;
-import krohigewagma.jp.paperang.ResultData;
 
 /*
  * 参考：https://lang-ship.com/blog/?p=1305
  *       https://lang-ship.com/blog/?p=1318
  */
-public class MainActivity extends AppCompatActivity implements PaperangListener {
+public class MainActivity extends AppCompatActivity {
 
     private static String SPP = "00001101-0000-1000-8000-00805F9B34FB";
     private static final int RESULT_PICK_IMAGEFILE = 1001;
@@ -85,6 +83,7 @@ public class MainActivity extends AppCompatActivity implements PaperangListener 
             @Override
             public void onClick(View view) {
                 try {
+                    ctl.disconnectBtCmd();
                     ctl.disconnect();
                 } catch (IOException e) {
                     Log.e("PAPERANG", e.getMessage());
@@ -110,106 +109,129 @@ public class MainActivity extends AppCompatActivity implements PaperangListener 
                         case GET_VERSION:
                             ctl.getVersion();
                             break;
-//                        case SENT_VERSION:
-//                            break;
-//                        case GET_MODEL:
-//                            ctl.getModel();
-//                            break;
-//                        case SENT_MODEL:
-//                            break;
+                        case SENT_VERSION:
+                            ctl.sentVersion();
+                            break;
+                        case GET_MODEL:
+                            ctl.getModel();
+                            break;
+                        case SENT_MODEL:
+                            ctl.sentModel();
+                            break;
                         case GET_BT_MAC:
                             ctl.getBtMac();
                             break;
-//                        case SENT_BT_MAC:
-//                            break;
-//                        case GET_SN:
-//                            ctl.getSn();
-//                            break;
-//                        case SENT_SN:
-//                            break;
-//                        case GET_STATUS:
-//                            ctl.getStatus();
-//                            break;
-//                        case SENT_STATUS:
-//                            break;
-//                        case GET_VOLTAGE:
-//                            ctl.getVoltage();
-//                            break;
-//                        case SENT_VOLTAGE :
-//                            break;
-//                        case GET_BAT_STATUS :
-//                            ctl.getBatStatus();
-//                            break;
-//                        case SENT_BAT_STATUS :
-//                            break;
-//                        case GET_TEMP:
-//                            ctl.getTemp();
-//                            break;
-//                        case SENT_TEMP:
-//                            break;
-//                        case SET_FACTORY_STATUS:
-//                            break;
-//                        case GET_FACTORY_STATUS :
-//                            ctl.getFactoryStatus();
-//                            break;
-//                        case SENT_FACTORY_STATUS :
-//                            break;
-//                        case SENT_BT_STATUS:
-//                            break;
-                        case SET_CRC_KEY:
+                        case SENT_BT_MAC:
+                            ctl.sentBtMac();
                             break;
+                        case GET_SN:
+                            ctl.getSn();
+                            break;
+                        case SENT_SN:
+                            ctl.sentSn();
+                            break;
+                        case GET_STATUS:
+                            ctl.getStatus();
+                            break;
+                        case SENT_STATUS:
+                            ctl.sentStatus();
+                            break;
+                        case GET_VOLTAGE:
+                            ctl.getVoltage();
+                            break;
+                        case SENT_VOLTAGE :
+                            ctl.sentVoltage();
+                            break;
+                        case GET_BAT_STATUS :
+                            ctl.getBatStatus();
+                            break;
+                        case SENT_BAT_STATUS :
+                            break;
+                        case GET_TEMP:
+                            ctl.getTemp();
+                            break;
+                        case SENT_TEMP:
+                            ctl.sentTemp();
+                            break;
+//                        case SET_FACTORY_STATUS:
+//                            ctl.setFactoryStatus();
+//                            break;
+                        case GET_FACTORY_STATUS :
+                            ctl.getFactoryStatus();
+                            break;
+                        case SENT_FACTORY_STATUS :
+                            ctl.sentFactoryStatus();
+                            break;
+                        case SENT_BT_STATUS:
+                            ctl.sentBtStatus();
+                            break;
+//                        case SET_CRC_KEY:
+//                          break;
 //                        case SET_HEAT_DENSITY:
 //                            break;
                         case FEED_LINE:
                             ctl.sendFeedLine((short)1);
                             break;
                         case PRINT_TEST_PAGE:
+                            ctl.printTestPage();
                             break;
-//                        case GET_HEAT_DENSITY:
-//                            ctl.getHeatDensity();
-//                            break;
-//                        case SENT_HEAT_DENSITY:
-//                            break;
+                        case GET_HEAT_DENSITY:
+                            ctl.getHeatDensity();
+                            break;
+                        case SENT_HEAT_DENSITY:
+                            ctl.sentHeatDensity();
+                            break;
 //                        case SET_POWER_DOWN_TIME:
+//                            ctl.setPowerDownTime();
 //                            break;
-//                        case GET_POWER_DOWN_TIME:
-//                            ctl.getPowerDownTime();
-//                            break;
-//                        case SENT_POWER_DOWN_TIME:
-//                            break;
-//                        case FEED_TO_HEAD_LINE:
-//                            break;
-//                        case PRINT_DEFAULT_PARA:
-//                            break;
-//                        case GET_BOARD_VERSION :
-//                            ctl.getBoardVersion();
-//                            break;
-//                        case SENT_BOARD_VERSION:
-//                            break;
-//                        case GET_HW_INFO:
-//                            ctl.getHwInfo();
-//                            break;
-//                        case SENT_HW_INFO:
-//                            break;
+                        case GET_POWER_DOWN_TIME:
+                            ctl.getPowerDownTime();
+                            break;
+                        case SENT_POWER_DOWN_TIME:
+                            ctl.sentPowerDownTime();
+                            break;
+                        case FEED_TO_HEAD_LINE:
+                            ctl.feedToHeadLine();
+                            break;
+                        case PRINT_DEFAULT_PARA:
+                            ctl.printDefaultPara();
+                            break;
+                        case GET_BOARD_VERSION :
+                            ctl.getBoardVersion();
+                            break;
+                        case SENT_BOARD_VERSION:
+                            ctl.sentBoardVersion();
+                            break;
+                        case GET_HW_INFO:
+                            ctl.getHwInfo();
+                            break;
+                        case SENT_HW_INFO:
+                            ctl.sentHwInfo();
+                            break;
 //                        case SET_MAX_GAP_LENGTH :
+//                            ctl.setMaxGapLength();
 //                            break;
-//                        case GET_MAX_GAP_LENGTH:
-//                            ctl.getMaxGapLength();
-//                            break;
-//                        case SENT_MAX_GAP_LENGTH :
-//                            break;
-//                        case GET_PAPER_TYPE :
-//                            ctl.getPaperType();
-//                            break;
-//                        case SENT_PAPER_TYPE:
-//                            break;
+                        case GET_MAX_GAP_LENGTH:
+                            ctl.getMaxGapLength();
+                            break;
+                        case SENT_MAX_GAP_LENGTH :
+                            ctl.sentMaxGapLength();
+                            break;
+                        case GET_PAPER_TYPE :
+                            ctl.getPaperType();
+                            break;
+                        case SENT_PAPER_TYPE:
+                            ctl.sentPaperType();
+                            break;
 //                        case SET_PAPER_TYPE :
+//                            ctl.setPaperType();
 //                            break;
-//                        case GET_COUNTRY_NAME:
-//                            ctl.getCountryName();
-//                            break;
-//                        case SENT_COUNTRY_NAME:
-//                            break;
+                        case GET_COUNTRY_NAME:
+                            ctl.getCountryName();
+                            break;
+                        case SENT_COUNTRY_NAME:
+                            ctl.sentCountryName();
+                            break;
                         case DISCONNECT_BT_CMD:
                             ctl.disconnectBtCmd();
                             break;
@@ -262,7 +284,6 @@ public class MainActivity extends AppCompatActivity implements PaperangListener 
         });
 
         ctl = new PaperangController();
-        ctl.addPaperangListener(this);
     }
 
     @Override
@@ -301,120 +322,4 @@ public class MainActivity extends AppCompatActivity implements PaperangListener 
             }
         }
     }
-
-    @Override
-    public void onResult(ResultData result) {
-        Log.i("PAPERANG", "result : " + result.toString());
-        StringBuffer logText = new StringBuffer();
-
-        switch(result.getCommand()){
-            case PRINT_DATA:
-                logText.append(result.getCommand().toString());
-                logText.append(":");
-                logText.append(result.getData().toString());
-                break;
-//            case PRINT_DATA_COMPRESS:
-//                break;
-//            case FIRMWARE_DATA:
-//                break;
-//            case USB_UPDATE_FIRMWARE:
-//                break;
-            case GET_VERSION:
-                break;
-//            case SENT_VERSION:
-//                break;
-            case GET_MODEL:
-                break;
-//            case SENT_MODEL:
-//                break;
-            case GET_BT_MAC:
-                break;
-//            case SENT_BT_MAC:
-//                break;
-//            case GET_SN:
-//                break;
-//            case SENT_SN:
-//                break;
-//            case GET_STATUS:
-//                break;
-//            case SENT_STATUS:
-//                break;
-//            case GET_VOLTAGE:
-//                break;
-//            case SENT_VOLTAGE :
-//                break;
-//            case GET_BAT_STATUS :
-//                break;
-//            case SENT_BAT_STATUS :
-//                break;
-//            case GET_TEMP:
-//                break;
-//            case SENT_TEMP:
-//                break;
-//            case SET_FACTORY_STATUS:
-//                break;
-//            case GET_FACTORY_STATUS :
-//                break;
-//            case SENT_FACTORY_STATUS :
-//                break;
-//            case SENT_BT_STATUS:
-//                break;
-            case SET_CRC_KEY:
-                break;
-//            case SET_HEAT_DENSITY:
-//                break;
-            case FEED_LINE:
-                break;
-            case PRINT_TEST_PAGE:
-                break;
-//            case GET_HEAT_DENSITY:
-//                break;
-//            case SENT_HEAT_DENSITY:
-//                break;
-//            case SET_POWER_DOWN_TIME:
-//                break;
-//            case GET_POWER_DOWN_TIME:
-//                break;
-//            case SENT_POWER_DOWN_TIME:
-//                break;
-//            case FEED_TO_HEAD_LINE:
-//                break;
-//            case PRINT_DEFAULT_PARA:
-//                break;
-//            case GET_BOARD_VERSION :
-//                break;
-//            case SENT_BOARD_VERSION:
-//                break;
-//            case GET_HW_INFO:
-//                break;
-//            case SENT_HW_INFO:
-//                break;
-//            case SET_MAX_GAP_LENGTH :
-//                break;
-//            case GET_MAX_GAP_LENGTH:
-//                break;
-//            case SENT_MAX_GAP_LENGTH :
-//                break;
-//            case GET_PAPER_TYPE :
-//                break;
-//            case SENT_PAPER_TYPE:
-//                break;
-//            case SET_PAPER_TYPE :
-//                break;
-//            case GET_COUNTRY_NAME:
-//                break;
-//            case SENT_COUNTRY_NAME:
-//                break;
-            case DISCONNECT_BT_CMD:
-                break;
-            default:
-                break;
-        }
-        Log.i("PAPERANG", logText.toString());
-
-    }
-
-
-
-
 }
